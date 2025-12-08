@@ -1,5 +1,15 @@
-from django.http import HttpResponse
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from .serializers import RegisterSerializer
+from .models import CustomUser
 
-def test_view(request):
-    return HttpResponse("Test view working:)")
-    
+@api_view(['POST'])
+def register_view(request):
+    serializer = RegisterSerializer(data = request.data)
+    if serializer.is_valid():
+        serializer.save()
+        return Response({
+            "success" : "Registration successful",
+            "user" : serializer.data
+        })
+    return Response(serializer.errors)
