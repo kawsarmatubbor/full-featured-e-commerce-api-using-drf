@@ -1,7 +1,6 @@
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from .serializers import RegisterSerializer
-from .models import CustomUser
 
 @api_view(['POST'])
 def register_view(request):

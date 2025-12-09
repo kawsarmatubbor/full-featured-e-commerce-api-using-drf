@@ -120,3 +120,10 @@ STATIC_URL = 'static/'
 
 # Auth user model
 AUTH_USER_MODEL = 'accounts.CustomUser'
+
+# Authentication using simple JWT
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    )
+}
