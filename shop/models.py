@@ -55,3 +55,14 @@ class Product(models.Model):
 
     def __str__(self):
         return self.title
+    
+class Cart(models.Model):
+    user = models.ForeignKey("accounts.CustomUser", on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField(default=1)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.user
