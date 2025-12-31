@@ -1,7 +1,12 @@
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .models import Category, Product
-from .serializers import CategorySerializer, ProductSerializer
+from rest_framework.permissions import IsAuthenticated
+from .models import Category, Product, Cart
+from .serializers import (
+    CategorySerializer, 
+    ProductSerializer, 
+    CartSerializer
+)
 from .permission import IsAdminOrReadOnly
 
 # Category view
@@ -22,7 +27,8 @@ class CategoriesViewSet(APIView):
                 "category": serializer.data
             })
         return Response(serializer.errors)
-    
+
+# Category details view   
 class CategoryDetailsViewSet(APIView):
     def get(self, request, slug):
         try:
@@ -85,6 +91,7 @@ class ProductViewSet(APIView):
             })
         return Response(serializer.errors)
     
+# Product details view
 class ProductDetailsViewSet(APIView):
     def get(self, request, slug):
         try:
@@ -126,4 +133,58 @@ class ProductDetailsViewSet(APIView):
         except Product.DoesNotExist:
             return Response({
                 "error": "Product does not exist."
+            })
+        
+# Cart view
+class CartViewSet(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        cart_items = Cart.objects.filter(user = request.user, is_active = True)
+        serializers = CartSerializer(cart_items, many = True)
+        return Response(serializers.data)
+    
+    def post(self, request):
+        serializer = CartSerializer(data = request.data)
+        if serializer.is_valid():
+            serializer.save(user = request.user)
+            return Response({
+                "success": "Product add to cart successful.",
+                "cart": serializer.data
+            })
+        return Response(serializer.errors)
+    
+# Cart item details view
+class CartItemDetailsViewSet(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request, id):
+        try:
+            cart_item = Cart.objects.get(id=id, user=request.user, is_active=True)
+            serializer = CartSerializer(cart_item, data = request.data)
+            
+            if serializer.is_valid():
+                serializer.save()
+                return Response({
+                    "success": "Cart updated successful.",
+                    "cart_item": serializer.data
+                })
+            return Response(serializer.errors)
+        
+        except Cart.DoesNotExist:
+            return Response({
+                "error": "Cart item does not exist."
+            })
+
+    def delete(self, request, id):
+        try:
+            cart_item = Cart.objects.get(id=id, user=request.user, is_active=True)
+            cart_item.delete()
+            return Response({
+                "success": "Cart item deleted successful."
+            })
+        
+        except Cart.DoesNotExist:
+            return Response({
+                "error": "Cart item does not exist."
             })

@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils.text import slugify
 
+# Category model
 class Category(models.Model):
     title = models.CharField(max_length=50)
     slug = models.SlugField(max_length=50, unique=True)
@@ -27,7 +28,8 @@ class Category(models.Model):
 
     def __str__(self):
         return self.title
-    
+
+# Product model
 class Product(models.Model):
     title = models.CharField(max_length=250)
     slug = models.SlugField(max_length=250, unique=True)
@@ -55,7 +57,8 @@ class Product(models.Model):
 
     def __str__(self):
         return self.title
-    
+
+# Cart model
 class Cart(models.Model):
     user = models.ForeignKey("accounts.CustomUser", on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
@@ -65,4 +68,4 @@ class Cart(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return self.user
+        return f"{self.user.email} - {self.product.name}({self.quantity})"

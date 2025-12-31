@@ -1,6 +1,7 @@
 from rest_framework import serializers
-from .models import Category, Product
+from .models import Category, Product, Cart
 
+# Category serializer
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
@@ -10,6 +11,7 @@ class CategorySerializer(serializers.ModelSerializer):
             'description' : {'required' : False},
         }
 
+# Product serializer
 class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
@@ -17,4 +19,12 @@ class ProductSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'slug' :  {'required' : False},
             'description' : {'required' : False},
+        }
+# Cart serializer
+class CartSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Cart
+        fields = ['id', 'user', 'product', 'quantity', 'is_active']
+        extra_kwargs = {
+            'user' : {'read_only' : True}
         }
