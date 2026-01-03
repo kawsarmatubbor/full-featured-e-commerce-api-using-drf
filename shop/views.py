@@ -1,12 +1,15 @@
+from django.utils.crypto import get_random_string
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
-from .models import Category, Product, Cart, CartProduct
+from .models import Category, Product, Cart, CartProduct, Order, OrderProduct
 from .serializers import (
     CategorySerializer, 
     ProductSerializer, 
     CartSerializer,
-    CartProductSerializer
+    CartProductSerializer,
+    OrderSerializer,
+    OrderProductSerializer
 )
 from .permission import IsAdminOrReadOnly
 
@@ -141,9 +144,9 @@ class CartViewSet(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        cart, _ = Cart.objects.get_or_create(user=request.user)
+        cart, _ = Cart.objects.get_or_create(user=request.user, is_active = True)
         cart_products = CartProduct.objects.filter(cart = cart, is_active = True)
-        serializer = CartProductSerializer(cart_products)
+        serializer = CartProductSerializer(cart_products, many = True)
         return Response(serializer.data)
     
     def post(self, request):
@@ -157,7 +160,7 @@ class CartViewSet(APIView):
             })
         return Response(serializer.errors)
 
-# Cart product details
+# Cart product details view
 class CartProductDetailsViewSet(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -204,4 +207,58 @@ class CartProductDetailsViewSet(APIView):
         except CartProduct.DoesNotExist:
             return Response({
                 "error": "Cart product does not exist."
+            })
+
+# Checkout view
+class CheckoutView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        try:
+            cart = Cart.objects.get(user = request.user, is_active = True)
+            cart_products = CartProduct.objects.filter(cart = cart, is_active = True)
+
+            if not cart_products.exists():
+                return Response({
+                    "error": "Cart is empty."
+                })
+            
+            tracking_id = get_random_string(length=12).upper()
+
+            total_price = 0
+            for cart_product in cart_products:
+                total_price += cart_product.sub_total
+
+            order_serializer = OrderSerializer(data = request.data)
+            if order_serializer.is_valid():
+                order = order_serializer.save(
+                    user = request.user,
+                    tracking_id = tracking_id,
+                    total_price = total_price,
+                )
+
+                for cart_product in cart_products:
+                    OrderProduct.objects.create(
+                        order = order,
+                        product = cart_product.product,
+                        price = cart_product.product.price,
+                        quantity = cart_product.quantity,
+                    )
+                    
+
+                cart.is_active = False
+                cart.save()
+                for cart_product in cart_products:
+                    cart_product.is_active = False
+                    cart_product.save()
+
+                return Response({
+                    "success" : "Order placed successful.",
+                    "order": order_serializer.data
+                })
+            return Response(order_serializer.errors)
+            
+        except Cart.DoesNotExist:
+            return Response({
+                "error": "No cart found."
             })
