@@ -47,7 +47,7 @@ class Product(models.Model):
             slug = base_slug
             counter = 1
 
-            while Category.objects.filter(slug=slug).exists():
+            while Product.objects.filter(slug=slug).exists():
                 slug = f"{base_slug}-{counter}"
                 counter += 1
 
@@ -61,11 +61,19 @@ class Product(models.Model):
 # Cart model
 class Cart(models.Model):
     user = models.ForeignKey("accounts.CustomUser", on_delete=models.CASCADE)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+# Cart product model
+class CartProduct(models.Model):
+    cart = models.ForeignKey(Cart, on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField(default=1)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    def __str__(self):
-        return f"{self.user.email} - {self.product.name}({self.quantity})"
+    @property
+    def sub_total(self):
+        return self.product.price * self.quantity
